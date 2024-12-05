@@ -1,6 +1,3 @@
-Here’s a detailed `README.md` for your Spotify Playlist Creator:
-
----
 
 # **Spotify Playlist Creator**
 
