@@ -18,6 +18,8 @@ SPOTIFY_CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 SPOTIFY_REDIRECT_URI = os.getenv("REDIRECT_URI") 
 SCOPE = 'playlist-modify-public playlist-modify-private'
 BATCH_SIZE = 100
+GET_LIM = 50
+GET_MAX = 150
 LISTS_DIR = "./lists"
 LIST_JSON = "test.json" # Replace with your own JSON file
 LOG_DIR = './logs'
@@ -29,9 +31,10 @@ PICK_HIGHER_POPULARITY = True
 CLEAR_PLAYLIST = True 
 # Configuration variable to allow approximate matches with distance of x
 USE_LEV = False 
-APPROX_MATCHES = 1 
+APPROX_MATCHES = 2 
 # Configuration vairable to decide whether to pick the artist that is more similar in genre or skip on finding duplicate artists
 PICK_GENRE_PROXIMITY = True # Only works with larger playlists, genre sometimes not available for smaller artists
+PICK_LOW_CONFIDENCE = True # Only works with larger playlists, genre sometimes not available for smaller artists
 
 os.makedirs(LOG_DIR, exist_ok=True)
 
@@ -123,7 +126,7 @@ for playlist in playlist_file["playlists"]:
             sp.playlist_replace_items(existing_playlist_id, [])  # This removes all existing tracks in the playlist
             logging.info("Playlist cleared.")
             existing_tracks = set()
-        else:
+        else: # Update
             logging.info(f"Checking for missing tracks...")
             existing_tracks = get_existing_tracks(existing_playlist_id)
     else:
@@ -136,10 +139,17 @@ for playlist in playlist_file["playlists"]:
     for artist in playlist["artists"]:
     # Perform search query with the artist name
         normalized_artistname = normalize_string(artist)
-        results = sp.search(q=f' {artist} ', type='artist', limit=50)  # Offset could be used to get more than the first 50 results
-
-        # Filter results for exact name matches (case-insensitive)
+        results = sp.search(q=f'{normalized_artistname}', type='artist', limit=GET_LIM) 
         exact_matches = [item for item in results['artists']['items'] if normalize_string(item['name']) == normalized_artistname]
+        total_results = results['artists']['total']
+        if total_results > GET_LIM: # if there are more than the first GET_LIM results, get them all
+            i = 1
+            while i * GET_LIM < total_results and i * GET_LIM <= GET_MAX:
+                results = sp.search(q=f'{normalized_artistname}', type='artist', limit=GET_LIM, offset= i * GET_LIM)  # Offset could be used to get more than the first 50 results
+                matches = [item for item in results['artists']['items'] if normalize_string(item['name']) == normalized_artistname]
+                if matches:
+                    exact_matches += matches
+                i += 1
 
         if not exact_matches and USE_LEV:
             approximate_matches = [
@@ -159,16 +169,16 @@ for playlist in playlist_file["playlists"]:
                 if PICK_GENRE_PROXIMITY:
                     exact_matches_groups.append(exact_matches)
                     continue
-                elif not PICK_GENRE_PROXIMITY and PICK_HIGHER_POPULARITY:
+                elif PICK_HIGHER_POPULARITY:
                     # Choose the match with the highest popularity
                     best_match = max(exact_matches, key=lambda x: x['popularity'])
                     logging.info(f"Choosing the most popular match for artist '{artist}': {best_match['name']} with popularity {best_match['popularity']}")
                 else:
                     # Skip processing if not picking the most popular match
-                    logging.info(f"Skipping artist '{artist}' due to multiple matches and PICK_HIGHER_POPULARITY set to False")
+                    logging.warning(f"Skipping artist '{artist}' due to multiple matches and PICK_HIGHER_POPULARITY set to False")
                     continue
             else:
-            # Single match
+                # Single match
                 best_match = exact_matches[0]
         
             # Process the best match
@@ -179,8 +189,8 @@ for playlist in playlist_file["playlists"]:
             # Extend track URIs if not already present
             track_uris.extend([track['uri'] for track in top_tracks if track['uri'] not in existing_tracks])
         else:
-            logging.info(f"No exact match found for artist '{artist} in:'")
-            logging.info(f"{[item['name'].lower() for item in results['artists']['items']]}")
+            logging.warning(f"No exact match found for artist '{artist}' in:")
+            logging.warning(f"{[item['name'].lower() for item in results['artists']['items']]}")
 
     if PICK_GENRE_PROXIMITY:
         for group in exact_matches_groups:
@@ -189,8 +199,6 @@ for playlist in playlist_file["playlists"]:
             max_matches = 0
             genre_matches = []
             for artist in group:
-                if artist['name']  == 'Khan':
-                    cool = 1
                 matches = len(set(genre_list) & set( artist['genres']))
                 if matches > max_matches:
                     max_matches = matches
@@ -200,14 +208,15 @@ for playlist in playlist_file["playlists"]:
             
             if len(genre_matches) > 1: 
                 best_match = max(genre_matches, key=lambda x: x['popularity'])
-                logging.info(f"Choosing the most popular match for artist '{artist}': {best_match['name']} with popularity {best_match['popularity']}")
+                logging.info(f"Choosing the most popular match for artist '{artist['name']}': {best_match['name']} with popularity {best_match['popularity']}")
             elif len(genre_matches) == 1: 
                 best_match = genre_matches[0]  # Take the first item if there's only one match
-                logging.info(f"Choosing the best genre match for artist '{artist}': {best_match['name']} with genre match rating {max_matches}")
-            elif PICK_HIGHER_POPULARITY:
+                logging.info(f"Choosing the best genre match for artist '{artist['name']}': {best_match['name']} with genre match rating {max_matches}")
+            elif PICK_HIGHER_POPULARITY and PICK_LOW_CONFIDENCE:
                 best_match = max(group, key=lambda x: x['popularity'])
-                logging.info(f"Low confidence: Choosing the most popular match for artist '{artist}': {best_match['name']} with popularity {best_match['popularity']}")
+                logging.warning(f"Low confidence: Choosing the most popular match for artist '{artist['name']}': {best_match['name']} with popularity {best_match['popularity']}")
             else: 
+                logging.warning(f"Skipping artist '{artist['name']}' due to no genre matches and PICK_HIGHER_POPULARITY set to False")
                 continue
 
             # Process the best match
