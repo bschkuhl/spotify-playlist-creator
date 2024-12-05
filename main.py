@@ -136,7 +136,7 @@ for playlist in playlist_file["playlists"]:
     for artist in playlist["artists"]:
     # Perform search query with the artist name
         normalized_artistname = normalize_string(artist)
-        results = sp.search(q=f'{artist}', type='artist', limit=50)  # Increase limit to handle multiple exact matches
+        results = sp.search(q=f' {artist} ', type='artist', limit=50)  # Offset could be used to get more than the first 50 results
 
         # Filter results for exact name matches (case-insensitive)
         exact_matches = [item for item in results['artists']['items'] if normalize_string(item['name']) == normalized_artistname]
@@ -206,7 +206,7 @@ for playlist in playlist_file["playlists"]:
                 logging.info(f"Choosing the best genre match for artist '{artist}': {best_match['name']} with genre match rating {max_matches}")
             elif PICK_HIGHER_POPULARITY:
                 best_match = max(group, key=lambda x: x['popularity'])
-                logging.info(f"Choosing the most popular match for artist '{artist}': {best_match['name']} with popularity {best_match['popularity']}")
+                logging.info(f"Low confidence: Choosing the most popular match for artist '{artist}': {best_match['name']} with popularity {best_match['popularity']}")
             else: 
                 continue
 
@@ -227,7 +227,3 @@ for playlist in playlist_file["playlists"]:
     logging.info(f"Finished updating playlist: {playlist['playlistName']}\n\n")
 
 logging.info(f"Finished updating playlists.")
-
-
-
-
