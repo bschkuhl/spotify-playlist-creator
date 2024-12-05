@@ -25,7 +25,7 @@ PICK_HIGHER_POPULARITY = True
 # Configuration variable to decide whether to clear playlist before adding new songs
 CLEAR_PLAYLIST = True 
 # Configuration variable to allow approximate matches with distance of x
-USE_LEV = True 
+USE_LEV = False 
 APPROX_MATCHES = 1 
 
 os.makedirs(LOG_DIR, exist_ok=True)
