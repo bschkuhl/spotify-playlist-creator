@@ -1,0 +1,13 @@
+
+{
+    "playlists": [
+        {
+            "playlistName": "Roadburn 2025 Playlist",
+            "artists": ["Altın Gün", "Bambara", "Big Brave", "Black Curse", "Blind Girls", "Buñuel", "Spectral Wound", "Chat Pile", "Choke Chain", "CHVE", "Cinder Well", "Coilguns", "Concrete Winds", "Curses (Live)", "De Mannen Broeders", "Denisa", "Dødheimsgard", "Faetooth", "FIRE!", "Gillian Carter", "Glassing", "Gnod Drop Out With White Hills", "Great Falls", "Human Impact", "Kylesa", "Messa", "New Age Doom feat. Tuvaband", "One Leg One Eye", "Ora Cogan", "ØXN", "pageninetynine", "Ponte del Diavolo", "Pothamus", "Pygmy Lush", "Smote", "Stress Positions", "Sumac", "The HIRS Collective", "Thou", "Tristwch Y Fenywod", "Violent Magic Orchestra", "Vuur & Zijde", "Vyva Melinkolya", "Witch Club Satan", "Zombie Zombie"]
+        },
+        {
+            "playlistName": "Hoflaerm 2025 Playlist",
+            "artists": ["Annie Taylor", "Coltaine", "Elephant Tree", "Graveyard", "Khan", "Lurch", "Maidavale", "Monolord", "Piece", "Rezn", "Spirit Mother", "The Warlocks", "Vinnum Sabbathi", "Vug", "Elephant Tree"]
+        }
+    ]
+}

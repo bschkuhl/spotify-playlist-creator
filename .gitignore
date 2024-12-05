@@ -1,5 +1,11 @@
 .env
 
+# Ignore all files in /lists
+/lists/*
+
+# Exclude example.json
+!/lists/example.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
