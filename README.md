@@ -1,38 +1,68 @@
+# Spotify Playlist Creator
 
-# **Spotify Playlist Creator**
-
-This is a Python-based script that automates the creation of Spotify playlists based on artists and festivals. Using the Spotify Web API via the `spotipy` library, the script searches for artists, retrieves their top tracks, and adds them to a new playlist.
+This Python script automates the creation and updating of Spotify playlists based on a JSON configuration file. It uses the Spotify Web API via the `spotipy` library to check for existing playlists and tracks, add missing tracks, and create new playlists as needed.
 
 ---
 
 ## **Features**
-- **Artist Search**: Searches for artists using Spotify's search functionality.
-- **Top Tracks Retrieval**: Fetches the top 3 tracks for each artist.
-- **Playlist Creation**: Automatically creates a new playlist for each festival.
-- **Batch Upload**: Handles Spotify's API limit of 100 tracks per request.
+- **Playlist Management**:
+  - Checks if a playlist already exists before creating a new one.
+  - Updates existing playlists by adding only missing tracks.
+- **Track Management**:
+  - Avoids duplicate tracks in playlists.
+  - Fetches the top 3 tracks for each artist and adds them to the playlist.
+- **Batch Upload**:
+  - Handles Spotify's API limit of 100 tracks per request by batching track additions.
 
 ---
 
 ## **Prerequisites**
-1. **Spotify Developer Account**: 
+1. **Spotify Developer Account**:
    - Sign up at [Spotify for Developers](https://developer.spotify.com/dashboard/).
    - Create a new app and obtain the `Client ID` and `Client Secret`.
 
-2. **Python**:
-   - Install Python 3.7 or later.
+2. **Python 3.7+**:
+   - Install Python if not already installed. You can download it from [Python.org](https://www.python.org/).
 
 3. **Required Python Libraries**:
    - `spotipy`
    - `python-dotenv`
+   - `requests`
 
-   Install them using:
+   Install the dependencies:
    ```bash
-   pip install spotipy python-dotenv
+   pip install -r requirements.txt  
    ```
+
+4. **Environment Variables**:
+   - Create a `.env` file in the project root and add the following:
+     ```
+     CLIENT_ID=your_client_id
+     CLIENT_SECRET=your_client_secret
+     REDIRECT_URI=http://localhost:8888/callback
+     ```
+
+5. **JSON Playlist Configuration**:
+   - Place your playlist JSON files in the `/lists` directory.
+   - Ensure the JSON file structure matches the following example:
+     ```json
+     {
+       "playlists": [
+         {
+           "playlistName": "My Playlist 1",
+           "artists": ["Artist 1", "Artist 2", "Artist 3"]
+         },
+         {
+           "playlistName": "My Playlist 2",
+           "artists": ["Artist A", "Artist B"]
+         }
+       ]
+     }
+     ```
 
 ---
 
-## **Setup**
+## **Setup and Usage**
 
 ### **1. Clone the Repository**
 ```bash
@@ -40,78 +70,45 @@ git clone https://github.com/your-username/spotify-playlist-creator.git
 cd spotify-playlist-creator
 ```
 
-### **2. Create a `.env` File**
-Create a `.env` file in the root directory and add the following:
+### **2. Prepare Your JSON Files**
+- Add your playlist JSON files to the `/lists` directory.
+- Update the `LIST_JSON` variable in the script to point to your desired JSON file:
+  ```python
+  LIST_JSON = "example.json"
+  ```
 
-```
-CLIENT_ID=your_client_id
-CLIENT_SECRET=your_client_secret
-REDIRECT_URI=http://localhost:8888/callback
-```
-
-Replace `your_client_id`, `your_client_secret`, and `http://localhost:8888/callback` with the credentials from your Spotify Developer account.
-
-### **3. Update Festivals and Artists**
-Modify the `festivals` object in the script to include your desired festivals and their artists:
-
-```python
-festivals = {
-    "festivalList": [
-        {
-            "festivalName": "Rock Fest",
-            "artists": ["Metallica", "Nirvana", "Pearl Jam"]
-        },
-        {
-            "festivalName": "Pop Carnival",
-            "artists": ["Taylor Swift", "Ed Sheeran", "Ariana Grande"]
-        }
-    ]
-}
-```
-
----
-
-## **Usage**
-
-### **Run the Script**
-Execute the script to create playlists:
+### **3. Run the Script**
+Execute the script to create and update playlists:
 ```bash
-python spotify_playlist_creator.py
-```
-
-### **Output**
-For each festival, a playlist will be created in your Spotify account, and the link to the playlist will be printed:
-
-```
-Playlist created: https://open.spotify.com/playlist/1234abcd5678efgh
+python main.py
 ```
 
 ---
 
-## **Code Explanation**
+## **How It Works**
 
-### **Key Steps**
-1. **Authentication**:
-   The script authenticates the user using Spotify's OAuth 2.0. Ensure the scopes `playlist-modify-public` and/or `playlist-modify-private` are included.
-   
-2. **Artist Search**:
-   Each artist is searched on Spotify to retrieve their `artist_id`.
+### **1. Authentication**
+The script uses OAuth 2.0 to authenticate with Spotify via the `spotipy` library.
 
-3. **Top Tracks**:
-   The top 3 tracks of each artist are fetched using the `artist_top_tracks` endpoint.
+### **2. Playlist Checks**
+- If a playlist with the same name exists, the script retrieves its tracks to avoid duplicates.
+- If no such playlist exists, a new one is created.
 
-4. **Playlist Creation**:
-   A new playlist is created for each festival using the `user_playlist_create` method.
+### **3. Artist and Track Processing**
+For each artist in the JSON file:
+- The script searches for the artist on Spotify.
+- Retrieves the artist's top 3 tracks.
+- Adds tracks that are not already in the playlist.
 
-5. **Batch Upload**:
-   Tracks are added to the playlist in batches of 100 or fewer to comply with Spotify's API limits.
+### **4. Batch Processing**
+Tracks are added in batches of up to 100, complying with Spotify's API limits.
 
 ---
 
 ## **Error Handling**
-- **Insufficient Scope**: Ensure the correct scopes are set in the OAuth configuration (`playlist-modify-public` or `playlist-modify-private`).
-- **Too Many Tracks**: The script automatically splits track URIs into batches of 100 to avoid API errors.
-- **Invalid Artist**: If an artist is not found, their tracks are skipped, and processing continues.
+- **Invalid JSON**: The script will raise an error if the JSON file structure is incorrect.
+- **Rate Limits**: Spotify API rate limits are managed, but delays may occur with large numbers of tracks or artists.
+- **Missing Tracks**: If an artist has no top tracks, they are skipped without stopping the script.
 
 ---
 
