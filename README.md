@@ -28,6 +28,7 @@ This Python script automates the creation and updating of Spotify playlists base
    - `spotipy`
    - `python-dotenv`
    - `requests`
+   - `python-Levenshtein`
 
    Install the dependencies:
    ```bash
