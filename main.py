@@ -82,6 +82,22 @@ def get_existing_tracks(playlist_id):
         results = sp.next(results) if results and results.get('next') else None  # Safely handle 'next'
     return existing_tracks
 
+def artist_exists_in_playlist(playlist_id, artist_name):
+    artist_name_normalized = artist_name.lower()
+    results = sp.playlist_tracks(playlist_id, fields="items(track(artists(name))),next", limit=100)
+
+    while results:
+        for item in results.get('items', []):
+            track = item.get('track')
+            if not track:
+                continue
+            for artist in track.get('artists', []):
+                if artist['name'].lower() == artist_name_normalized:
+                    return True
+        results = sp.next(results) if results.get('next') else None
+
+    return False
+
 def normalize_string(s):
     """Normalize string to remove special characters and accents."""
     return unicodedata.normalize('NFKD', s).encode('ASCII', 'ignore').decode('ASCII').lower()
@@ -94,8 +110,6 @@ def normalize_genre(genres):
     for genre in genres:
         normalized_genre = pattern.sub('', genre)
         normalized_genres.append(normalized_genre)
-        if normalized_genre != genre:
-            logging.info(f'Normalized genre "{genre}" to "{normalized_genre}".')
     return normalized_genres
 
 # Load playlist data from file
@@ -138,6 +152,8 @@ for playlist in playlist_file["playlists"]:
     # Process artists and their top tracks
     for artist in playlist["artists"]:
     # Perform search query with the artist name
+        if artist_exists_in_playlist(existing_playlist_id, artist):
+            continue
         normalized_artistname = normalize_string(artist)
         results = sp.search(q=f'{normalized_artistname}', type='artist', limit=GET_LIM) 
         exact_matches = [item for item in results['artists']['items'] if normalize_string(item['name']) == normalized_artistname]
