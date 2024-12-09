@@ -21,20 +21,20 @@ BATCH_SIZE = 100
 GET_LIM = 50
 GET_MAX = 150
 LISTS_DIR = "./lists"
-LIST_JSON = "test.json" # Replace with your own JSON file
+LIST_JSON = "festivals.json" # Replace with your own JSON file
 LOG_DIR = './logs'
 COUNTRY_PREFIXES_JSON = "country_prefixes.json" # Replace with your own JSON file
 HELPER_DIR = './helpers'
 # Configuration variable to decide whether to pick the higher popularity or skip on finding duplicate artists
 PICK_HIGHER_POPULARITY = True 
 # Configuration variable to decide whether to clear playlist before adding new songs
-CLEAR_PLAYLIST = True 
+CLEAR_PLAYLIST = False 
 # Configuration variable to allow approximate matches with distance of x
 USE_LEV = False 
 APPROX_MATCHES = 2 
 # Configuration vairable to decide whether to pick the artist that is more similar in genre or skip on finding duplicate artists
 PICK_GENRE_PROXIMITY = True # Only works with larger playlists, genre sometimes not available for smaller artists
-PICK_LOW_CONFIDENCE = True # Only works with larger playlists, genre sometimes not available for smaller artists
+PICK_LOW_CONFIDENCE = True # Instead of ignoring results that might be wrong, they are added to be reviewed later
 
 os.makedirs(LOG_DIR, exist_ok=True)
 
@@ -233,6 +233,7 @@ for playlist in playlist_file["playlists"]:
             sp.playlist_add_items(existing_playlist_id, batch)
             logging.info(f"Added batch {i // BATCH_SIZE + 1} to the playlist '{playlist['playlistName']}'.")
 
+    if genre_list: logging.info(f"Playlist contains the following genres: {", ".join(genre_list)}")
     logging.info(f"Finished updating playlist: {playlist['playlistName']}\n\n")
 
 logging.info(f"Finished updating playlists.")
