@@ -233,7 +233,9 @@ for playlist in playlist_file["playlists"]:
             sp.playlist_add_items(existing_playlist_id, batch)
             logging.info(f"Added batch {i // BATCH_SIZE + 1} to the playlist '{playlist['playlistName']}'.")
 
-    if genre_list: logging.info(f"Playlist contains the following genres: {", ".join(genre_list)}")
+    if genre_list: 
+        genre_list_str = ", ".join(genre_list)
+        logging.info(f"Playlist contains the following genres: {genre_list_str}")
     logging.info(f"Finished updating playlist: {playlist['playlistName']}\n\n")
 
 logging.info(f"Finished updating playlists.")
