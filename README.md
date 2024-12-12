@@ -13,7 +13,10 @@ This Python script automates the creation and updating of Spotify playlists base
   - Fetches the top 3 tracks for each artist and adds them to the playlist.
 - **Batch Upload**:
   - Handles Spotify's API limit of 100 tracks per request by batching track additions.
-
+- **Website Scraping**:
+  - Scrapes band and album information from websites. 
+  - Automatically creates a playlist with the scraped data. 
+  - Playlist name is dynamically set to the website's title.
 ---
 
 ## **Prerequisites**
@@ -25,11 +28,6 @@ This Python script automates the creation and updating of Spotify playlists base
    - Install Python if not already installed. You can download it from [Python.org](https://www.python.org/).
 
 3. **Required Python Libraries**:
-   - `spotipy`
-   - `python-dotenv`
-   - `requests`
-   - `python-Levenshtein`
-
    Install the dependencies:
    ```bash
    pip install -r requirements.txt  
@@ -81,30 +79,12 @@ cd spotify-playlist-creator
 ### **3. Run the Script**
 Execute the script to create and update playlists:
 ```bash
-python main.py
+python by_artist.py
 ```
-
----
-
-## **How It Works**
-
-### **1. Authentication**
-The script uses OAuth 2.0 to authenticate with Spotify via the `spotipy` library.
-
-### **2. Playlist Checks**
-- If a playlist with the same name exists, the script retrieves its tracks to avoid duplicates.
-- If no such playlist exists, a new one is created.
-
-### **3. Artist and Track Processing**
-For each artist in the JSON file:
-- The script searches for the artist on Spotify.
-- Retrieves the artist's top 3 tracks.
-- Adds tracks that are not already in the playlist.
-
-### **4. Batch Processing**
-Tracks are added in batches of up to 100, complying with Spotify's API limits.
-
----
+Execute the script to scrape a website like theobelisk.net and update playlists:
+```bash
+python by_artist_and_album.py
+```
 
 ## **Error Handling**
 - **Invalid JSON**: The script will raise an error if the JSON file structure is incorrect.
