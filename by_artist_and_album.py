@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import os
 import logging
 from datetime import datetime
+import json
 
 # Created originally for scraping theobelisk reviews and creating spotify playlists
 
@@ -51,18 +52,91 @@ def playlist_exists(user_id, playlist_name):
         playlists = sp.next(playlists) if playlists['next'] else None
     return None
 
+def scrape_track(url, dict):
+
+    response = requests.get(url)
+    response.raise_for_status()
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    if "bandcamp" in url:
+        script_tag = soup.find('script', attrs={'data-player-data': True})
+        if script_tag:
+            data_player_data = script_tag['data-player-data']  # Extract the attribute content
+            try:
+                # Parse JSON content
+                data = json.loads(data_player_data)
+                artist = data.get('artist', None)
+                album = data.get('album_title', None)
+                if artist not in dict:
+                    dict[f"{artist}"] = album
+            except json.JSONDecodeError as e:
+                print(f"Error decoding JSON: {e}")
+    elif "spotify" in url:
+        if "album/" in url:
+            get_album_and_artist(url.split("album/")[1].split("?")[0], dict)
+    else:
+        print("No 'data-player-data' script tag found.")  
+    
+    return dict
+
+# Get artist and album information by album ID
+def get_album_and_artist(album_id, dict):
+    album_data = sp.album(album_id)
+    artist = album_data['artists'][0]['name']
+    album = album_data['name']
+    dict[f"{artist}"] = album
+
+    return dict
+
+def scrape_iframes(url):
+    """
+    Scrape links from iframe tags on a given webpage.
+    
+    Args:
+        url (str): The URL of the webpage to scrape.
+
+    Returns:
+        list: A list of links found in iframe tags.
+    """
+    response = requests.get(url)
+    response.raise_for_status()
+    soup = BeautifulSoup(response.text, 'html.parser')
+    
+    # Find all iframe tags
+    iframe_tags = soup.find_all('iframe')
+    
+    # Extract links
+    links = []
+    for iframe in iframe_tags:
+        src = iframe.get('src')
+        if src and 'bandcamp.com' in src:
+            links.append(src)
+        elif src and 'open.spotify.com' in src:
+            links.append(src)
+    
+    return links
+
+
 # Function to scrape bandname, album, and title from a website
 def scrape_website(url):
     response = requests.get(url)
     response.raise_for_status()
     soup = BeautifulSoup(response.text, 'html.parser')
     dict = {}
-    for tag in soup.select('div#content .post .entrytext h2'):  # Mention HTML tag names here. .entrytext h2
-        child = tag.find('em')
-        if child:
-            dict[f"{tag.next.rstrip(', ').strip()}"] = child.text.strip()
+    if "theobelisk" in url:
+        for tag in soup.select('.entrytext h2'):  # Mention HTML tag names here. .entrytext h2
+            child = tag.find('em')
+            if child:
+                key = tag.next.rstrip(', ').strip().replace('\u200b', '')
+                value = child.text.strip().replace('\u200b', '')
+                dict[key] = value
+    elif "thedevilsmouth" in url:
+        dict = {}
+        links = scrape_iframes(url)
+        for link in links:
+            dict = scrape_track(link, dict)
     
-    title = soup.title.string.strip()
+    title = soup.title.string.strip().replace('\u200b', '')
 
     return dict, title
 
@@ -94,20 +168,26 @@ def search_and_add_to_playlist(dict, playlist_name, url):
 
 # Main logic to handle input
 def main():
-    input_mode = input("Enter 'manual' to provide bandname and album, or 'url' to scrape from a website: ").strip().lower()
+    input_mode = input("Enter 'manual' to provide bandname and album, or 'url' to scrape from a website: ").strip().replace('\u200b', '').lower()
     
     if input_mode == 'manual':
-        user_input = input("Enter bandname and album (separated by a comma): ").strip()
-        bandname, album = [x.strip() for x in user_input.split(',', 1)]
-        playlist_name = input("Enter playlist name: ").strip()
+        user_input = input("Enter bandname and album (separated by a comma): ").strip().replace('\u200b', '')
+        bandname, album = [x.strip().replace('\u200b', '') for x in user_input.split(',', 1)]
+        playlist_name = input("Enter playlist name: ").strip().replace('\u200b', '')
         dict = {}
         dict[f"{bandname}"] = album
 
         search_and_add_to_playlist(dict, playlist_name, url)
     elif input_mode == 'url':
-        url = input("Enter the URL to scrape: ").strip()
+        url = input("Enter the URL to scrape: ").strip().replace('\u200b', '')
+        playlist_name = input("Enter playlist name: ").strip().replace('\u200b', '')
+
         try:
             dict, title = scrape_website(url)
+            #Devils mouth: Top 30 2024
+            #https://thedevilsmouth.substack.com/p/top-30-albums-2024-part-i-30-25
+            if playlist_name != None:
+                title = playlist_name
             search_and_add_to_playlist(dict, title, url)
         except Exception as e:
             logging.error(f"Failed to scrape website: {e}")
