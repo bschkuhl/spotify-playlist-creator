@@ -7,6 +7,7 @@ import os
 import logging
 from datetime import datetime
 import json
+import re
 
 # Created originally for scraping theobelisk reviews and creating spotify playlists
 
@@ -124,10 +125,18 @@ def scrape_website(url):
     soup = BeautifulSoup(response.text, 'html.parser')
     dict = {}
     if "theobelisk" in url:
+        for tag in soup.select('.entrytext h3'):  # Mention HTML tag names here. .entrytext h2
+            child = tag.find('em')
+            if child:
+                key = tag.next.rstrip(', ').strip().replace('\u200b', '')
+                key = re.sub(r"^\d+\.\s*", "", key)
+                value = child.text.strip().replace('\u200b', '')
+                dict[key] = value
         for tag in soup.select('.entrytext h2'):  # Mention HTML tag names here. .entrytext h2
             child = tag.find('em')
             if child:
                 key = tag.next.rstrip(', ').strip().replace('\u200b', '')
+                key = re.sub(r"^\d+\.\s*", "", key)
                 value = child.text.strip().replace('\u200b', '')
                 dict[key] = value
     elif "thedevilsmouth" in url:
